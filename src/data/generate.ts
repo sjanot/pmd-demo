@@ -81,20 +81,9 @@ function generateDate(): string | null {
 }
 
 export function generateData(count: number): Person[] {
-  const realData: Person[] = [
-    { id: 1, datumZapisu: "2018-11-13", oslovenie: "Vážený pán", priezvisko: "ABAFFY", meno: "František", ulica: "Oravická 783", psc: "028 01", obec: "Trstená", email: "", poznamka: "", vs: "", nechceDL: false, clenskaKarta: false, clen: false, nechceKalendar: false, nechceCasopis: false, telefon: "", misijneNovinky: "" },
-    { id: 2, datumZapisu: "2021-09-20", oslovenie: "Vážená pani", priezvisko: "ABAFFY", meno: "Blanka", ulica: "Uzlovská 3784/1", psc: "036 01", obec: "Martin", email: "babaffy@gmail.com", poznamka: "", vs: "4123", nechceDL: false, clenskaKarta: false, clen: false, nechceKalendar: false, nechceCasopis: false, telefon: "+421 903 401 908", misijneNovinky: "áno" },
-    { id: 3, datumZapisu: null, oslovenie: "Vážený pán", priezvisko: "ABAFFY", meno: "Marián", ulica: "Uzlovská 1/4", psc: "036 08", obec: "Martin", email: "", poznamka: "", vs: "", nechceDL: false, clenskaKarta: false, clen: true, nechceKalendar: false, nechceCasopis: false, telefon: "", misijneNovinky: "" },
-    { id: 4, datumZapisu: "2021-05-25", oslovenie: "Vážená pani", priezvisko: "ABAFFYOVÁ", meno: "Mária", ulica: "Dolný Moštenec 132", psc: "017 01", obec: "Považská Bystrica", email: "lenka.abaffyova@gmail.com", poznamka: "Z webu", vs: "1470", nechceDL: false, clenskaKarta: false, clen: false, nechceKalendar: false, nechceCasopis: false, telefon: "+421 911 555 365", misijneNovinky: "" },
-    { id: 5, datumZapisu: "2021-07-02", oslovenie: "Vážená pani", priezvisko: "ABAFFYOVÁ", meno: "Mária", ulica: "Čankov 86", psc: "934 01", obec: "Levice", email: "", poznamka: "", vs: "", nechceDL: false, clenskaKarta: false, clen: false, nechceKalendar: false, nechceCasopis: false, telefon: "", misijneNovinky: "" },
-    { id: 6, datumZapisu: "2024-12-19", oslovenie: "Vážená pani", priezvisko: "ABAFFYOVÁ", meno: "Antónia", ulica: "Oravická 783", psc: "028 01", obec: "Trstené", email: "", poznamka: "", vs: "", nechceDL: false, clenskaKarta: false, clen: false, nechceKalendar: false, nechceCasopis: false, telefon: "", misijneNovinky: "" },
-    { id: 7, datumZapisu: "2020-06-25", oslovenie: "Vážená pani", priezvisko: "ABARIOVÁ", meno: "Natália", ulica: "Nová 28", psc: "045 01", obec: "Moldava nad Bodvou", email: "midova.natalia@gmail.com", poznamka: "", vs: "", nechceDL: false, clenskaKarta: false, clen: false, nechceKalendar: false, nechceCasopis: false, telefon: "", misijneNovinky: "" },
-    { id: 8, datumZapisu: "2021-08-26", oslovenie: "Vážená pani", priezvisko: "ABARIOVÁ", meno: "Natália", ulica: "Orgovánová 429/2", psc: "045 01", obec: "Mokrance", email: "katarina.abariova@zoznam.sk", poznamka: "Z webu", vs: "3065", nechceDL: false, clenskaKarta: false, clen: false, nechceKalendar: false, nechceCasopis: false, telefon: "+421 908 344 768", misijneNovinky: "nie" },
-  ];
+  const generated: Person[] = [];
 
-  const generated: Person[] = [...realData];
-
-  for (let i = realData.length + 1; i <= count; i++) {
+  for (let i = 1; i <= count; i++) {
     const isFemale = Math.random() < 0.6;
     const surname = pick(SURNAMES);
     const displaySurname = isFemale ? surname + "OVÁ" : surname;

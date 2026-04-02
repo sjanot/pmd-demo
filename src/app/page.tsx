@@ -1,17 +1,23 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Header } from "../components/header";
 import { StatsCards } from "../components/stats-cards";
 import { DataTable } from "../components/data-table";
+import { LoginForm } from "../components/login-form";
 import { generateData } from "../data/generate";
 
 export default function Home() {
+  const [loggedIn, setLoggedIn] = useState(false);
   const data = useMemo(() => generateData(40000), []);
+
+  if (!loggedIn) {
+    return <LoginForm onLogin={() => setLoggedIn(true)} />;
+  }
 
   return (
     <>
-      <Header />
+      <Header onLogout={() => setLoggedIn(false)} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 space-y-4 px-4 py-4 sm:px-6">
         <StatsCards data={data} />
         <DataTable data={data} />
