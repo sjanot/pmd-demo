@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useCallback } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -28,121 +28,250 @@ import {
 } from "lucide-react";
 import { cn } from "../lib/utils";
 import type { Person } from "../types/person";
+import { EMPLOYEES } from "../types/person";
 import { PersonDetail } from "./person-detail";
+import { EditableCell } from "./editable-cell";
 
-const columns: ColumnDef<Person>[] = [
-  {
-    accessorKey: "priezvisko",
-    header: "Priezvisko",
-    cell: ({ row }) => (
-      <span className="font-medium">{row.getValue("priezvisko")}</span>
-    ),
-  },
-  {
-    accessorKey: "meno",
-    header: "Meno",
-  },
-  {
-    accessorKey: "obec",
-    header: "Obec",
-  },
-  {
-    accessorKey: "psc",
-    header: "PSČ",
-  },
-  {
-    accessorKey: "email",
-    header: "E-mail",
-    cell: ({ row }) => {
-      const email = row.getValue("email") as string;
-      return email ? (
-        <span className="text-primary-light">{email}</span>
-      ) : (
-        <span className="text-muted/40">—</span>
-      );
+function buildColumns(
+  onUpdate: (rowIndex: number, key: string, value: unknown) => void
+): ColumnDef<Person>[] {
+  const base: ColumnDef<Person>[] = [
+    {
+      accessorKey: "priezvisko",
+      header: "Priezvisko",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("priezvisko")}
+          onSave={(v) => onUpdate(row.index, "priezvisko", v)}
+          className="font-medium"
+        />
+      ),
     },
-  },
-  {
-    accessorKey: "telefon",
-    header: "Telefón",
-    cell: ({ row }) => {
-      const phone = row.getValue("telefon") as string;
-      return phone || <span className="text-muted/40">—</span>;
+    {
+      accessorKey: "meno",
+      header: "Meno",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("meno")}
+          onSave={(v) => onUpdate(row.index, "meno", v)}
+        />
+      ),
     },
-  },
-  {
-    accessorKey: "clen",
-    header: "Člen",
-    cell: ({ row }) => {
-      const val = row.getValue("clen") as boolean;
+    {
+      accessorKey: "ulica",
+      header: "Ulica",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("ulica")}
+          onSave={(v) => onUpdate(row.index, "ulica", v)}
+        />
+      ),
+    },
+    {
+      accessorKey: "obec",
+      header: "Obec",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("obec")}
+          onSave={(v) => onUpdate(row.index, "obec", v)}
+        />
+      ),
+    },
+    {
+      accessorKey: "psc",
+      header: "PSČ",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("psc")}
+          onSave={(v) => onUpdate(row.index, "psc", v)}
+        />
+      ),
+    },
+    {
+      accessorKey: "email",
+      header: "E-mail",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("email")}
+          onSave={(v) => onUpdate(row.index, "email", v)}
+          className="text-primary-light"
+          placeholder=""
+        />
+      ),
+    },
+    {
+      accessorKey: "telefon",
+      header: "Telefón",
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("telefon")}
+          onSave={(v) => onUpdate(row.index, "telefon", v)}
+          placeholder=""
+        />
+      ),
+    },
+    {
+      accessorKey: "nechceDL",
+      header: "Ďak. list",
+      cell: ({ row }) => {
+        const val = row.getValue("nechceDL") as boolean;
+        return (
+          <button
+            onClick={() => onUpdate(row.index, "nechceDL", !val)}
+            className={cn(
+              "inline-flex rounded-full px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors",
+              val
+                ? "bg-accent/10 text-accent"
+                : "bg-success/10 text-success"
+            )}
+          >
+            {val ? "Nechce" : "Chce"}
+          </button>
+        );
+      },
+    },
+    {
+      accessorKey: "nechceCasopis",
+      header: "Časopis",
+      cell: ({ row }) => {
+        const val = row.getValue("nechceCasopis") as boolean;
+        return (
+          <button
+            onClick={() => onUpdate(row.index, "nechceCasopis", !val)}
+            className={cn(
+              "inline-flex rounded-full px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors",
+              val
+                ? "bg-accent/10 text-accent"
+                : "bg-success/10 text-success"
+            )}
+          >
+            {val ? "Nechce" : "Chce"}
+          </button>
+        );
+      },
+    },
+    {
+      accessorKey: "nechceKalendar",
+      header: "Kalendár",
+      cell: ({ row }) => {
+        const val = row.getValue("nechceKalendar") as boolean;
+        return (
+          <button
+            onClick={() => onUpdate(row.index, "nechceKalendar", !val)}
+            className={cn(
+              "inline-flex rounded-full px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors",
+              val
+                ? "bg-accent/10 text-accent"
+                : "bg-success/10 text-success"
+            )}
+          >
+            {val ? "Nechce" : "Chce"}
+          </button>
+        );
+      },
+    },
+    {
+      accessorKey: "clen",
+      header: "Člen",
+      cell: ({ row }) => {
+        const val = row.getValue("clen") as boolean;
+        return (
+          <button
+            onClick={() => onUpdate(row.index, "clen", !val)}
+            className={cn(
+              "inline-flex rounded-full px-2 py-0.5 text-xs font-medium cursor-pointer transition-colors",
+              val
+                ? "bg-success/10 text-success"
+                : "bg-muted-bg text-muted"
+            )}
+          >
+            {val ? "Áno" : "Nie"}
+          </button>
+        );
+      },
+      filterFn: (row, id, value) => {
+        if (value === "all") return true;
+        return row.getValue(id) === (value === "true");
+      },
+    },
+    {
+      accessorKey: "datumZapisu",
+      header: "Dátum zápisu",
+      cell: ({ row }) => {
+        const val = row.getValue("datumZapisu") as string | null;
+        if (!val) return <span className="text-muted/40">—</span>;
+        return new Date(val).toLocaleDateString("sk-SK");
+      },
+      enableHiding: true,
+    },
+    {
+      accessorKey: "oslovenie",
+      header: "Oslovenie",
+      enableHiding: true,
+    },
+    {
+      accessorKey: "vs",
+      header: "VS",
+      enableHiding: true,
+      cell: ({ row }) => (
+        <EditableCell
+          value={row.getValue("vs")}
+          onSave={(v) => onUpdate(row.index, "vs", v)}
+        />
+      ),
+    },
+    {
+      accessorKey: "misijneNovinky",
+      header: "Mis. novinky",
+      cell: ({ row }) => {
+        const val = row.getValue("misijneNovinky") as string;
+        if (!val) return <span className="text-muted/40">—</span>;
+        return (
+          <span
+            className={cn(
+              "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
+              val === "áno"
+                ? "bg-gold/10 text-gold"
+                : "bg-muted-bg text-muted"
+            )}
+          >
+            {val}
+          </span>
+        );
+      },
+      enableHiding: true,
+    },
+  ];
+
+  // Employee donation columns
+  const donationColumns: ColumnDef<Person>[] = EMPLOYEES.map((emp) => ({
+    id: `dar_${emp.id}`,
+    accessorFn: (row: Person) => row.dary[emp.id],
+    header: emp.name,
+    cell: ({ row }: { row: { index: number; original: Person } }) => {
+      const val = row.original.dary[emp.id];
       return (
-        <span
-          className={cn(
-            "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
-            val
-              ? "bg-success/10 text-success"
-              : "bg-muted-bg text-muted"
-          )}
-        >
-          {val ? "Áno" : "Nie"}
-        </span>
+        <EditableCell
+          value={val != null ? String(val) : ""}
+          onSave={(v) => {
+            const num = v === "" ? null : Number(v);
+            onUpdate(row.index, `dar_${emp.id}`, num);
+          }}
+          type="number"
+          placeholder=""
+          className={val != null ? "text-success font-medium" : ""}
+        />
       );
     },
-    filterFn: (row, id, value) => {
-      if (value === "all") return true;
-      return row.getValue(id) === (value === "true");
-    },
-  },
-  {
-    accessorKey: "datumZapisu",
-    header: "Dátum zápisu",
-    cell: ({ row }) => {
-      const val = row.getValue("datumZapisu") as string | null;
-      if (!val) return <span className="text-muted/40">—</span>;
-      return new Date(val).toLocaleDateString("sk-SK");
-    },
-  },
-  {
-    accessorKey: "oslovenie",
-    header: "Oslovenie",
-    enableHiding: true,
-  },
-  {
-    accessorKey: "ulica",
-    header: "Ulica",
-    enableHiding: true,
-  },
-  {
-    accessorKey: "vs",
-    header: "VS",
-    enableHiding: true,
-  },
-  {
-    accessorKey: "misijneNovinky",
-    header: "Mis. novinky",
-    cell: ({ row }) => {
-      const val = row.getValue("misijneNovinky") as string;
-      if (!val) return <span className="text-muted/40">—</span>;
-      return (
-        <span
-          className={cn(
-            "inline-flex rounded-full px-2 py-0.5 text-xs font-medium",
-            val === "áno"
-              ? "bg-gold/10 text-gold"
-              : "bg-muted-bg text-muted"
-          )}
-        >
-          {val}
-        </span>
-      );
-    },
-    enableHiding: true,
-  },
-];
+  }));
+
+  // Insert donation columns after telefon (index 6) — before the boolean flags
+  return [...base.slice(0, 7), ...donationColumns, ...base.slice(7)];
+}
 
 const DEFAULT_HIDDEN: Record<string, boolean> = {
   oslovenie: false,
-  ulica: false,
+  datumZapisu: false,
   vs: false,
   misijneNovinky: false,
 };
@@ -151,7 +280,8 @@ interface DataTableProps {
   data: Person[];
 }
 
-export function DataTable({ data }: DataTableProps) {
+export function DataTable({ data: initialData }: DataTableProps) {
+  const [data, setData] = useState(initialData);
   const [sorting, setSorting] = useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([]);
   const [columnVisibility, setColumnVisibility] =
@@ -159,6 +289,26 @@ export function DataTable({ data }: DataTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [showColumns, setShowColumns] = useState(false);
+
+  const handleUpdate = useCallback(
+    (rowIndex: number, key: string, value: unknown) => {
+      setData((prev) => {
+        const next = [...prev];
+        const row = { ...next[rowIndex] };
+        if (key.startsWith("dar_")) {
+          const empId = key.slice(4);
+          row.dary = { ...row.dary, [empId]: value as number | null };
+        } else {
+          (row as Record<string, unknown>)[key] = value;
+        }
+        next[rowIndex] = row as Person;
+        return next;
+      });
+    },
+    []
+  );
+
+  const columns = buildColumns(handleUpdate);
 
   const table = useReactTable({
     data,
@@ -187,10 +337,21 @@ export function DataTable({ data }: DataTableProps) {
     (columnFilters.find((f) => f.id === "clen")?.value as string) ?? "all";
 
   function exportCSV() {
-    const headers = ["Priezvisko", "Meno", "Obec", "PSČ", "E-mail", "Telefón", "Člen"];
+    const headers = [
+      "Priezvisko", "Meno", "Ulica", "Obec", "PSČ", "E-mail", "Telefón",
+      ...EMPLOYEES.map((e) => `Dar - ${e.name}`),
+      "Ďak. list", "Časopis", "Kalendár", "Člen",
+    ];
     const rows = table.getFilteredRowModel().rows.map((row) => {
       const p = row.original;
-      return [p.priezvisko, p.meno, p.obec, p.psc, p.email, p.telefon, p.clen ? "Áno" : "Nie"].join(";");
+      return [
+        p.priezvisko, p.meno, p.ulica, p.obec, p.psc, p.email, p.telefon,
+        ...EMPLOYEES.map((e) => p.dary[e.id] ?? ""),
+        p.nechceDL ? "Nechce" : "Chce",
+        p.nechceCasopis ? "Nechce" : "Chce",
+        p.nechceKalendar ? "Nechce" : "Chce",
+        p.clen ? "Áno" : "Nie",
+      ].join(";");
     });
     const csv = [headers.join(";"), ...rows].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -254,7 +415,7 @@ export function DataTable({ data }: DataTableProps) {
             <span className="hidden sm:inline">Stĺpce</span>
           </button>
           {showColumns && (
-            <div className="absolute right-0 top-10 z-20 w-48 rounded-md border border-border bg-card p-2 shadow-lg">
+            <div className="absolute right-0 top-10 z-20 max-h-80 w-48 overflow-y-auto rounded-md border border-border bg-card p-2 shadow-lg">
               {table.getAllLeafColumns().map((column) => (
                 <label
                   key={column.id}
@@ -284,14 +445,19 @@ export function DataTable({ data }: DataTableProps) {
         </button>
       </div>
 
-      {/* Count */}
-      <p className="text-xs text-muted">
-        Zobrazených{" "}
-        <span className="font-medium text-foreground">
-          {filteredCount.toLocaleString("sk-SK")}
-        </span>{" "}
-        z {data.length.toLocaleString("sk-SK")} záznamov
-      </p>
+      {/* Info */}
+      <div className="flex items-center justify-between">
+        <p className="text-xs text-muted">
+          Zobrazených{" "}
+          <span className="font-medium text-foreground">
+            {filteredCount.toLocaleString("sk-SK")}
+          </span>{" "}
+          z {data.length.toLocaleString("sk-SK")} záznamov
+        </p>
+        <p className="text-xs text-muted/60">
+          Dvojklik na bunku = úprava
+        </p>
+      </div>
 
       {/* Table */}
       <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
@@ -299,34 +465,40 @@ export function DataTable({ data }: DataTableProps) {
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-border bg-muted-bg/50">
-                {headerGroup.headers.map((header) => (
-                  <th
-                    key={header.id}
-                    className={cn(
-                      "whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold text-muted uppercase tracking-wider",
-                      header.column.getCanSort() && "cursor-pointer select-none hover:text-foreground"
-                    )}
-                    onClick={header.column.getToggleSortingHandler()}
-                  >
-                    <div className="flex items-center gap-1">
-                      {flexRender(
-                        header.column.columnDef.header,
-                        header.getContext()
+                {headerGroup.headers.map((header) => {
+                  const isDonation = header.id.startsWith("dar_");
+                  return (
+                    <th
+                      key={header.id}
+                      className={cn(
+                        "whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider",
+                        isDonation
+                          ? "bg-gold/5 text-gold border-l border-gold/20"
+                          : "text-muted",
+                        header.column.getCanSort() && "cursor-pointer select-none hover:text-foreground"
                       )}
-                      {header.column.getCanSort() && (
-                        <span className="text-muted/50">
-                          {header.column.getIsSorted() === "asc" ? (
-                            <ChevronUp className="h-3.5 w-3.5" />
-                          ) : header.column.getIsSorted() === "desc" ? (
-                            <ChevronDown className="h-3.5 w-3.5" />
-                          ) : (
-                            <ChevronsUpDown className="h-3.5 w-3.5" />
-                          )}
-                        </span>
-                      )}
-                    </div>
-                  </th>
-                ))}
+                      onClick={header.column.getToggleSortingHandler()}
+                    >
+                      <div className="flex items-center gap-1">
+                        {flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
+                        )}
+                        {header.column.getCanSort() && (
+                          <span className="text-muted/50">
+                            {header.column.getIsSorted() === "asc" ? (
+                              <ChevronUp className="h-3.5 w-3.5" />
+                            ) : header.column.getIsSorted() === "desc" ? (
+                              <ChevronDown className="h-3.5 w-3.5" />
+                            ) : (
+                              <ChevronsUpDown className="h-3.5 w-3.5" />
+                            )}
+                          </span>
+                        )}
+                      </div>
+                    </th>
+                  );
+                })}
               </tr>
             ))}
           </thead>
@@ -334,14 +506,22 @@ export function DataTable({ data }: DataTableProps) {
             {table.getRowModel().rows.map((row) => (
               <tr
                 key={row.id}
-                onClick={() => setSelectedPerson(row.original)}
-                className="cursor-pointer border-b border-border/50 transition-colors hover:bg-primary/[0.02]"
+                className="border-b border-border/50 transition-colors hover:bg-primary/[0.02]"
               >
-                {row.getVisibleCells().map((cell) => (
-                  <td key={cell.id} className="whitespace-nowrap px-3 py-2">
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </td>
-                ))}
+                {row.getVisibleCells().map((cell) => {
+                  const isDonation = cell.column.id.startsWith("dar_");
+                  return (
+                    <td
+                      key={cell.id}
+                      className={cn(
+                        "whitespace-nowrap px-3 py-1.5",
+                        isDonation && "bg-gold/[0.02] border-l border-gold/10"
+                      )}
+                    >
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  );
+                })}
               </tr>
             ))}
           </tbody>

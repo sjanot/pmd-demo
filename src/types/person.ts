@@ -17,4 +17,19 @@ export interface Person {
   nechceCasopis: boolean;
   telefon: string;
   misijneNovinky: string;
+  /** Donation amounts per employee key */
+  dary: Record<string, number | null>;
 }
+
+export interface Employee {
+  id: string;
+  name: string;
+}
+
+export const EMPLOYEES: Employee[] = [
+  { id: "katka", name: "Katka" },
+  { id: "marek", name: "Marek" },
+  { id: "jana", name: "Jana" },
+  { id: "peter", name: "Peter" },
+  { id: "lucia", name: "Lucia" },
+];

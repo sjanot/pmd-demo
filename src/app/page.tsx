@@ -9,7 +9,7 @@ import { generateData } from "../data/generate";
 
 export default function Home() {
   const [loggedIn, setLoggedIn] = useState(false);
-  const data = useMemo(() => generateData(40000), []);
+  const initialData = useMemo(() => generateData(40000), []);
 
   if (!loggedIn) {
     return <LoginForm onLogin={() => setLoggedIn(true)} />;
@@ -19,8 +19,8 @@ export default function Home() {
     <>
       <Header onLogout={() => setLoggedIn(false)} />
       <main className="mx-auto w-full max-w-[1600px] flex-1 space-y-4 px-4 py-4 sm:px-6">
-        <StatsCards data={data} />
-        <DataTable data={data} />
+        <StatsCards data={initialData} />
+        <DataTable data={initialData} />
       </main>
       <footer className="border-t border-border py-3 text-center text-xs text-muted">
         Demo verzia — Pápežské misijné diela © {new Date().getFullYear()} |

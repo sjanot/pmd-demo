@@ -1,4 +1,5 @@
 import type { Person } from "../types/person";
+import { EMPLOYEES } from "../types/person";
 
 const SURNAMES = [
   "NOVÁK", "HORVÁTH", "KOVÁČ", "VARGA", "TÓTH", "NAGY", "BALÁŽ", "MOLNÁR",
@@ -108,6 +109,12 @@ export function generateData(count: number): Person[] {
       nechceCasopis: Math.random() < 0.06,
       telefon: generatePhone(),
       misijneNovinky: Math.random() < 0.3 ? "áno" : Math.random() < 0.1 ? "nie" : "",
+      dary: Object.fromEntries(
+        EMPLOYEES.map((e) => [
+          e.id,
+          Math.random() < 0.15 ? rand(5, 200) : null,
+        ])
+      ),
     });
   }
 
