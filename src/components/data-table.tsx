@@ -1,27 +1,23 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import {
   useReactTable,
   getCoreRowModel,
   getSortedRowModel,
   getFilteredRowModel,
-  getPaginationRowModel,
   flexRender,
   type ColumnDef,
   type SortingState,
   type ColumnFiltersState,
   type VisibilityState,
 } from "@tanstack/react-table";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import {
   Search,
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
   Download,
   Eye,
   Plus,
@@ -277,6 +273,8 @@ const DEFAULT_HIDDEN: Record<string, boolean> = {
   misijneNovinky: false,
 };
 
+const ROW_HEIGHT = 33;
+
 interface DataTableProps {
   data: Person[];
 }
@@ -290,6 +288,8 @@ export function DataTable({ data: initialData }: DataTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [showColumns, setShowColumns] = useState(false);
+
+  const tableContainerRef = useRef<HTMLDivElement>(null);
 
   const handleUpdate = useCallback(
     (rowIndex: number, key: string, value: unknown) => {
@@ -327,13 +327,18 @@ export function DataTable({ data: initialData }: DataTableProps) {
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
-    initialState: {
-      pagination: { pageSize: 50 },
-    },
   });
 
-  const filteredCount = table.getFilteredRowModel().rows.length;
+  const { rows } = table.getFilteredRowModel();
+
+  const virtualizer = useVirtualizer({
+    count: rows.length,
+    getScrollElement: () => tableContainerRef.current,
+    estimateSize: () => ROW_HEIGHT,
+    overscan: 20,
+  });
+
+  const filteredCount = rows.length;
   const memberFilter =
     (columnFilters.find((f) => f.id === "clen")?.value as string) ?? "all";
 
@@ -360,7 +365,8 @@ export function DataTable({ data: initialData }: DataTableProps) {
       dary: Object.fromEntries(EMPLOYEES.map((e) => [e.id, null])),
     };
     setData((prev) => [newPerson, ...prev]);
-    table.setPageIndex(0);
+    // Scroll to top so the new row is visible
+    tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   function exportCSV() {
@@ -369,7 +375,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
       ...EMPLOYEES.map((e) => `Dar - ${e.name}`),
       "Ďak. list", "Časopis", "Kalendár", "Člen",
     ];
-    const rows = table.getFilteredRowModel().rows.map((row) => {
+    const csvRows = table.getFilteredRowModel().rows.map((row) => {
       const p = row.original;
       return [
         p.priezvisko, p.meno, p.ulica, p.obec, p.psc, p.email, p.telefon,
@@ -380,7 +386,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
         p.clen ? "Áno" : "Nie",
       ].join(";");
     });
-    const csv = [headers.join(";"), ...rows].join("\n");
+    const csv = [headers.join(";"), ...csvRows].join("\n");
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -391,9 +397,9 @@ export function DataTable({ data: initialData }: DataTableProps) {
   }
 
   return (
-    <div className="space-y-3">
+    <div className="flex flex-col" style={{ height: "calc(100vh - 180px)" }}>
       {/* Toolbar */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2 pb-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" />
           <input
@@ -481,7 +487,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
       </div>
 
       {/* Info */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between pb-2">
         <p className="text-xs text-muted">
           Zobrazených{" "}
           <span className="font-medium text-foreground">
@@ -494,12 +500,15 @@ export function DataTable({ data: initialData }: DataTableProps) {
         </p>
       </div>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm scrollbar-visible">
+      {/* Virtualized scrollable table */}
+      <div
+        ref={tableContainerRef}
+        className="flex-1 overflow-auto rounded-lg border border-border bg-card shadow-sm scrollbar-visible"
+      >
         <table className="min-w-max text-sm">
-          <thead>
+          <thead className="sticky top-0 z-10">
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-border bg-muted-bg/50">
+              <tr key={headerGroup.id} className="border-b border-border bg-muted-bg">
                 {headerGroup.headers.map((header) => {
                   const isDonation = header.id.startsWith("dar_");
                   return (
@@ -509,7 +518,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
                         "whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider",
                         isDonation
                           ? "bg-gold/5 text-gold border-l border-gold/20"
-                          : "text-muted",
+                          : "text-muted bg-muted-bg",
                         header.column.getCanSort() && "cursor-pointer select-none hover:text-foreground"
                       )}
                       onClick={header.column.getToggleSortingHandler()}
@@ -537,83 +546,46 @@ export function DataTable({ data: initialData }: DataTableProps) {
               </tr>
             ))}
           </thead>
-          <tbody>
-            {table.getRowModel().rows.map((row) => (
-              <tr
-                key={row.id}
-                className="border-b border-border/50 transition-colors hover:bg-primary/[0.02]"
-              >
-                {row.getVisibleCells().map((cell) => {
-                  const isDonation = cell.column.id.startsWith("dar_");
-                  return (
-                    <td
-                      key={cell.id}
-                      className={cn(
-                        "whitespace-nowrap px-3 py-1.5",
-                        isDonation && "bg-gold/[0.02] border-l border-gold/10"
-                      )}
-                    >
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
+          <tbody
+            style={{
+              height: `${virtualizer.getTotalSize()}px`,
+              position: "relative",
+            }}
+          >
+            {virtualizer.getVirtualItems().map((virtualRow) => {
+              const row = rows[virtualRow.index];
+              return (
+                <tr
+                  key={row.id}
+                  className="border-b border-border/50 transition-colors hover:bg-primary/[0.02]"
+                  style={{
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    width: "100%",
+                    height: `${virtualRow.size}px`,
+                    transform: `translateY(${virtualRow.start}px)`,
+                  }}
+                >
+                  {row.getVisibleCells().map((cell) => {
+                    const isDonation = cell.column.id.startsWith("dar_");
+                    return (
+                      <td
+                        key={cell.id}
+                        className={cn(
+                          "whitespace-nowrap px-3 py-1.5",
+                          isDonation && "bg-gold/[0.02] border-l border-gold/10"
+                        )}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </td>
+                    );
+                  })}
+                </tr>
+              );
+            })}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted">Riadkov na stránku:</span>
-          <select
-            value={table.getState().pagination.pageSize}
-            onChange={(e) => table.setPageSize(Number(e.target.value))}
-            className="h-8 rounded-md border border-border bg-card px-2 text-xs outline-none"
-          >
-            {[25, 50, 100, 250].map((size) => (
-              <option key={size} value={size}>
-                {size}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        <div className="flex items-center gap-1">
-          <span className="text-xs text-muted mr-2">
-            Strana {table.getState().pagination.pageIndex + 1} z{" "}
-            {table.getPageCount()}
-          </span>
-          <button
-            onClick={() => table.setPageIndex(0)}
-            disabled={!table.getCanPreviousPage()}
-            className="rounded p-1 hover:bg-muted-bg disabled:opacity-30"
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => table.previousPage()}
-            disabled={!table.getCanPreviousPage()}
-            className="rounded p-1 hover:bg-muted-bg disabled:opacity-30"
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => table.nextPage()}
-            disabled={!table.getCanNextPage()}
-            className="rounded p-1 hover:bg-muted-bg disabled:opacity-30"
-          >
-            <ChevronRight className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => table.setPageIndex(table.getPageCount() - 1)}
-            disabled={!table.getCanNextPage()}
-            className="rounded p-1 hover:bg-muted-bg disabled:opacity-30"
-          >
-            <ChevronsRight className="h-4 w-4" />
-          </button>
-        </div>
       </div>
 
       {/* Detail panel */}
