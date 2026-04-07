@@ -18,6 +18,7 @@ import {
   ChevronUp,
   ChevronDown,
   ChevronsUpDown,
+  ClipboardPaste,
   Download,
   Eye,
   Plus,
@@ -351,6 +352,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
     person: Person;
     index: number;
   } | null>(null);
+  const [pasteToast, setPasteToast] = useState<number | null>(null);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
@@ -491,6 +493,66 @@ export function DataTable({ data: initialData }: DataTableProps) {
     tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  // Paste from Excel (tab-separated)
+  // Column mapping: Priezvisko, Meno, Ulica, Obec, PSČ, E-mail, Telefón
+  const PASTE_KEYS: (keyof Person)[] = [
+    "priezvisko", "meno", "ulica", "obec", "psc", "email", "telefon",
+  ];
+
+  useEffect(() => {
+    function onPaste(e: ClipboardEvent) {
+      // Don't intercept paste in input fields
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA") return;
+
+      const text = e.clipboardData?.getData("text/plain");
+      if (!text) return;
+
+      const lines = text.split(/\r?\n/).filter((l) => l.trim());
+      if (lines.length === 0) return;
+
+      const newPersons: Person[] = lines.map((line, i) => {
+        const cells = line.split("\t");
+        const person: Person = {
+          id: data.length + i + 1,
+          datumZapisu: new Date().toISOString().slice(0, 10),
+          oslovenie: "",
+          priezvisko: "",
+          meno: "",
+          ulica: "",
+          psc: "",
+          obec: "",
+          email: "",
+          poznamka: "",
+          vs: "",
+          nechceDL: false,
+          clenskaKarta: false,
+          clen: false,
+          nechceKalendar: false,
+          nechceCasopis: false,
+          telefon: "",
+          misijneNovinky: "",
+          dary: Object.fromEntries(EMPLOYEES.map((emp) => [emp.id, null])),
+        };
+        cells.forEach((val, ci) => {
+          if (ci < PASTE_KEYS.length) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (person as any)[PASTE_KEYS[ci]] = val.trim();
+          }
+        });
+        return person;
+      });
+
+      setData((prev) => [...newPersons, ...prev]);
+      setPasteToast(newPersons.length);
+      tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
+      e.preventDefault();
+    }
+
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [data.length]);
+
   function exportCSV() {
     const headers = [
       "Priezvisko", "Meno", "Ulica", "Obec", "PSČ", "E-mail", "Telefón",
@@ -618,7 +680,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
           z {data.length.toLocaleString("sk-SK")} záznamov
         </p>
         <p className="text-xs text-muted/60">
-          Dvojklik = úprava · Shift+klik na hlavičku = zoradiť podľa viacerých stĺpcov
+          Dvojklik = úprava · Shift+klik = multi-sort · Ctrl+V = vložiť z Excelu
         </p>
       </div>
 
@@ -756,6 +818,22 @@ export function DataTable({ data: initialData }: DataTableProps) {
           </button>
           <button
             onClick={() => setDeletedToast(null)}
+            className="text-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      )}
+
+      {/* Paste toast */}
+      {pasteToast != null && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-lg">
+          <ClipboardPaste className="h-4 w-4 text-success" />
+          <span className="text-sm">
+            Vložených <strong>{pasteToast}</strong> záznamov z Excelu
+          </span>
+          <button
+            onClick={() => setPasteToast(null)}
             className="text-muted hover:text-foreground"
           >
             <X className="h-4 w-4" />
