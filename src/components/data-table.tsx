@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef, useMemo } from "react";
+import { useState, useCallback, useRef, useMemo, useEffect } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -323,6 +323,34 @@ export function DataTable({ data: initialData }: DataTableProps) {
   const [showColumns, setShowColumns] = useState(false);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
+  const topScrollRef = useRef<HTMLDivElement>(null);
+  const syncing = useRef(false);
+
+  useEffect(() => {
+    const table = tableContainerRef.current;
+    const top = topScrollRef.current;
+    if (!table || !top) return;
+
+    function onTableScroll() {
+      if (syncing.current) return;
+      syncing.current = true;
+      if (top) top.scrollLeft = table!.scrollLeft;
+      syncing.current = false;
+    }
+    function onTopScroll() {
+      if (syncing.current) return;
+      syncing.current = true;
+      if (table) table.scrollLeft = top!.scrollLeft;
+      syncing.current = false;
+    }
+
+    table.addEventListener("scroll", onTableScroll);
+    top.addEventListener("scroll", onTopScroll);
+    return () => {
+      table.removeEventListener("scroll", onTableScroll);
+      top.removeEventListener("scroll", onTopScroll);
+    };
+  }, []);
 
   const handleUpdate = useCallback(
     (rowIndex: number, key: string, value: unknown) => {
@@ -361,6 +389,11 @@ export function DataTable({ data: initialData }: DataTableProps) {
     onColumnFiltersChange: setColumnFilters,
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
+    enableMultiSort: true,
+    isMultiSortEvent: (e: unknown) => {
+      const evt = e as MouseEvent;
+      return evt.ctrlKey || evt.metaKey;
+    },
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -543,8 +576,17 @@ export function DataTable({ data: initialData }: DataTableProps) {
           z {data.length.toLocaleString("sk-SK")} záznamov
         </p>
         <p className="text-xs text-muted/60">
-          Dvojklik na bunku = úprava
+          Dvojklik = úprava · Ctrl+klik = zoradiť podľa viacerých stĺpcov
         </p>
+      </div>
+
+      {/* Top horizontal scrollbar */}
+      <div
+        ref={topScrollRef}
+        className="overflow-x-auto scrollbar-visible"
+        style={{ overflowY: "hidden", maxHeight: 12 }}
+      >
+        <div style={{ width: `${totalWidth}px`, height: 1 }} />
       </div>
 
       {/* Virtualized scrollable table using CSS grid for column alignment */}
