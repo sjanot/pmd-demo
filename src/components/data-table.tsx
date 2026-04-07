@@ -281,33 +281,47 @@ function buildColumns(
     cell: ({ row }: { row: { index: number; original: Person } }) => {
       const val = row.original.dary[emp.id];
       return (
-        <div className="flex items-center gap-0.5">
-          <EditableCell
-            value={val != null ? String(val) : ""}
-            onSave={(v) => {
-              const num = v === "" ? null : Number(v);
-              onUpdate(row.index, `dar_${emp.id}`, num);
-            }}
-            type="number"
-            placeholder=""
-            className={val != null ? "text-success font-medium" : ""}
-          />
-          {val != null && (
-            <button
-              onClick={() => onUpdate(row.index, `dar_${emp.id}`, null)}
-              className="shrink-0 rounded p-0.5 text-muted/30 hover:text-accent hover:bg-accent/10 transition-colors"
-              title="Vymazať dar"
-            >
-              <X className="h-3 w-3" />
-            </button>
-          )}
-        </div>
+        <EditableCell
+          value={val != null ? String(val) : ""}
+          onSave={(v) => {
+            const num = v === "" ? null : Number(v);
+            onUpdate(row.index, `dar_${emp.id}`, num);
+          }}
+          type="number"
+          placeholder=""
+          className={val != null ? "text-success font-medium" : ""}
+        />
       );
     },
   }));
 
-  // actions(0) + 7 data columns, then donations, then the rest
-  return [...base.slice(0, 8), ...donationColumns, ...base.slice(8)];
+  // Clear all donations for a row
+  const clearDonationsCol: ColumnDef<Person> = {
+    id: "clear_dary",
+    header: "",
+    size: 36,
+    enableSorting: false,
+    cell: ({ row }: { row: { index: number; original: Person } }) => {
+      const hasDary = EMPLOYEES.some((e) => row.original.dary[e.id] != null);
+      if (!hasDary) return null;
+      return (
+        <button
+          onClick={() => {
+            for (const e of EMPLOYEES) {
+              onUpdate(row.index, `dar_${e.id}`, null);
+            }
+          }}
+          className="rounded p-0.5 text-muted/40 hover:text-accent hover:bg-accent/10 transition-colors"
+          title="Vymazať všetky dary v riadku"
+        >
+          <X className="h-3.5 w-3.5" />
+        </button>
+      );
+    },
+  };
+
+  // actions(0) + 7 data columns, then donations + clear, then the rest
+  return [...base.slice(0, 8), ...donationColumns, clearDonationsCol, ...base.slice(8)];
 }
 
 const DEFAULT_HIDDEN: Record<string, boolean> = {
