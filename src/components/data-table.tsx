@@ -24,6 +24,7 @@ import {
   ChevronsRight,
   Download,
   Eye,
+  Plus,
   X,
 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -336,6 +337,32 @@ export function DataTable({ data: initialData }: DataTableProps) {
   const memberFilter =
     (columnFilters.find((f) => f.id === "clen")?.value as string) ?? "all";
 
+  function addRow() {
+    const newPerson: Person = {
+      id: data.length + 1,
+      datumZapisu: new Date().toISOString().slice(0, 10),
+      oslovenie: "",
+      priezvisko: "",
+      meno: "",
+      ulica: "",
+      psc: "",
+      obec: "",
+      email: "",
+      poznamka: "",
+      vs: "",
+      nechceDL: false,
+      clenskaKarta: false,
+      clen: false,
+      nechceKalendar: false,
+      nechceCasopis: false,
+      telefon: "",
+      misijneNovinky: "",
+      dary: Object.fromEntries(EMPLOYEES.map((e) => [e.id, null])),
+    };
+    setData((prev) => [newPerson, ...prev]);
+    table.setPageIndex(0);
+  }
+
   function exportCSV() {
     const headers = [
       "Priezvisko", "Meno", "Ulica", "Obec", "PSČ", "E-mail", "Telefón",
@@ -437,6 +464,14 @@ export function DataTable({ data: initialData }: DataTableProps) {
         </div>
 
         <button
+          onClick={addRow}
+          className="flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm text-white hover:bg-primary/90"
+        >
+          <Plus className="h-4 w-4" />
+          <span className="hidden sm:inline">Nový riadok</span>
+        </button>
+
+        <button
           onClick={exportCSV}
           className="flex h-9 items-center gap-1 rounded-md border border-border bg-card px-3 text-sm text-muted hover:text-foreground"
         >
@@ -460,8 +495,8 @@ export function DataTable({ data: initialData }: DataTableProps) {
       </div>
 
       {/* Table */}
-      <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm">
-        <table className="w-full text-sm">
+      <div className="overflow-x-auto rounded-lg border border-border bg-card shadow-sm scrollbar-visible">
+        <table className="min-w-max text-sm">
           <thead>
             {table.getHeaderGroups().map((headerGroup) => (
               <tr key={headerGroup.id} className="border-b border-border bg-muted-bg/50">
