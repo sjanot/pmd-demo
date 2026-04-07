@@ -22,6 +22,7 @@ import {
   Eye,
   Plus,
   Trash2,
+  Undo2,
   X,
 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -346,6 +347,11 @@ export function DataTable({ data: initialData }: DataTableProps) {
   const [globalFilter, setGlobalFilter] = useState("");
   const [selectedPerson, setSelectedPerson] = useState<Person | null>(null);
   const [showColumns, setShowColumns] = useState(false);
+  const [deletedToast, setDeletedToast] = useState<{
+    person: Person;
+    index: number;
+  } | null>(null);
+  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
@@ -396,8 +402,26 @@ export function DataTable({ data: initialData }: DataTableProps) {
   );
 
   const handleDelete = useCallback((rowIndex: number) => {
-    setData((prev) => prev.filter((_, i) => i !== rowIndex));
+    setData((prev) => {
+      const person = prev[rowIndex];
+      setDeletedToast({ person, index: rowIndex });
+      if (toastTimeout.current) clearTimeout(toastTimeout.current);
+      toastTimeout.current = setTimeout(() => setDeletedToast(null), 8000);
+      return prev.filter((_, i) => i !== rowIndex);
+    });
   }, []);
+
+  const handleUndo = useCallback(() => {
+    if (!deletedToast) return;
+    const { person, index } = deletedToast;
+    setData((prev) => {
+      const next = [...prev];
+      next.splice(Math.min(index, next.length), 0, person);
+      return next;
+    });
+    setDeletedToast(null);
+    if (toastTimeout.current) clearTimeout(toastTimeout.current);
+  }, [deletedToast]);
 
   const columns = buildColumns(handleUpdate, handleDelete);
 
@@ -716,6 +740,31 @@ export function DataTable({ data: initialData }: DataTableProps) {
           person={selectedPerson}
           onClose={() => setSelectedPerson(null)}
         />
+      )}
+
+      {/* Undo toast */}
+      {deletedToast && (
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 rounded-lg border border-border bg-card px-4 py-3 shadow-lg animate-in fade-in slide-in-from-bottom-4">
+          <span className="text-sm">
+            Vymazaný záznam:{" "}
+            <strong>
+              {deletedToast.person.priezvisko} {deletedToast.person.meno}
+            </strong>
+          </span>
+          <button
+            onClick={handleUndo}
+            className="flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-white hover:bg-primary/90"
+          >
+            <Undo2 className="h-3.5 w-3.5" />
+            Obnoviť
+          </button>
+          <button
+            onClick={() => setDeletedToast(null)}
+            className="text-muted hover:text-foreground"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       )}
     </div>
   );
