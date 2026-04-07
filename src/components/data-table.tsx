@@ -281,16 +281,27 @@ function buildColumns(
     cell: ({ row }: { row: { index: number; original: Person } }) => {
       const val = row.original.dary[emp.id];
       return (
-        <EditableCell
-          value={val != null ? String(val) : ""}
-          onSave={(v) => {
-            const num = v === "" ? null : Number(v);
-            onUpdate(row.index, `dar_${emp.id}`, num);
-          }}
-          type="number"
-          placeholder=""
-          className={val != null ? "text-success font-medium" : ""}
-        />
+        <div className="flex items-center gap-0.5">
+          <EditableCell
+            value={val != null ? String(val) : ""}
+            onSave={(v) => {
+              const num = v === "" ? null : Number(v);
+              onUpdate(row.index, `dar_${emp.id}`, num);
+            }}
+            type="number"
+            placeholder=""
+            className={val != null ? "text-success font-medium" : ""}
+          />
+          {val != null && (
+            <button
+              onClick={() => onUpdate(row.index, `dar_${emp.id}`, null)}
+              className="shrink-0 rounded p-0.5 text-muted/30 hover:text-accent hover:bg-accent/10 transition-colors"
+              title="Vymazať dar"
+            >
+              <X className="h-3 w-3" />
+            </button>
+          )}
+        </div>
       );
     },
   }));
