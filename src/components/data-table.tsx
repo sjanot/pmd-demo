@@ -390,10 +390,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
     onColumnVisibilityChange: setColumnVisibility,
     onGlobalFilterChange: setGlobalFilter,
     enableMultiSort: true,
-    isMultiSortEvent: (e: unknown) => {
-      const evt = e as MouseEvent;
-      return evt.ctrlKey || evt.metaKey;
-    },
+    maxMultiSortColCount: 3,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
@@ -576,7 +573,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
           z {data.length.toLocaleString("sk-SK")} záznamov
         </p>
         <p className="text-xs text-muted/60">
-          Dvojklik = úprava · Ctrl+klik = zoradiť podľa viacerých stĺpcov
+          Dvojklik = úprava · Shift+klik na hlavičku = zoradiť podľa viacerých stĺpcov
         </p>
       </div>
 
@@ -621,13 +618,18 @@ export function DataTable({ data: initialData }: DataTableProps) {
                         header.getContext()
                       )}
                       {header.column.getCanSort() && (
-                        <span className="text-muted/50">
+                        <span className="text-muted/50 flex items-center">
                           {header.column.getIsSorted() === "asc" ? (
                             <ChevronUp className="h-3.5 w-3.5" />
                           ) : header.column.getIsSorted() === "desc" ? (
                             <ChevronDown className="h-3.5 w-3.5" />
                           ) : (
                             <ChevronsUpDown className="h-3.5 w-3.5" />
+                          )}
+                          {sorting.length > 1 && header.column.getIsSorted() && (
+                            <span className="ml-0.5 text-[9px] font-bold text-primary">
+                              {header.column.getSortIndex() + 1}
+                            </span>
                           )}
                         </span>
                       )}
