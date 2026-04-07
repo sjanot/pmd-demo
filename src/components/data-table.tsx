@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useMemo } from "react";
 import {
   useReactTable,
   getCoreRowModel,
@@ -21,6 +21,7 @@ import {
   Download,
   Eye,
   Plus,
+  Trash2,
   X,
 } from "lucide-react";
 import { cn } from "../lib/utils";
@@ -30,12 +31,29 @@ import { PersonDetail } from "./person-detail";
 import { EditableCell } from "./editable-cell";
 
 function buildColumns(
-  onUpdate: (rowIndex: number, key: string, value: unknown) => void
+  onUpdate: (rowIndex: number, key: string, value: unknown) => void,
+  onDelete: (rowIndex: number) => void
 ): ColumnDef<Person>[] {
   const base: ColumnDef<Person>[] = [
     {
+      id: "actions",
+      header: "",
+      size: 36,
+      enableSorting: false,
+      cell: ({ row }) => (
+        <button
+          onClick={() => onDelete(row.index)}
+          className="rounded p-0.5 text-muted/40 hover:text-accent hover:bg-accent/10 transition-colors"
+          title="Vymazať riadok"
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      ),
+    },
+    {
       accessorKey: "priezvisko",
       header: "Priezvisko",
+      size: 140,
       cell: ({ row }) => (
         <EditableCell
           value={row.getValue("priezvisko")}
@@ -47,6 +65,7 @@ function buildColumns(
     {
       accessorKey: "meno",
       header: "Meno",
+      size: 110,
       cell: ({ row }) => (
         <EditableCell
           value={row.getValue("meno")}
@@ -57,6 +76,7 @@ function buildColumns(
     {
       accessorKey: "ulica",
       header: "Ulica",
+      size: 180,
       cell: ({ row }) => (
         <EditableCell
           value={row.getValue("ulica")}
@@ -67,6 +87,7 @@ function buildColumns(
     {
       accessorKey: "obec",
       header: "Obec",
+      size: 150,
       cell: ({ row }) => (
         <EditableCell
           value={row.getValue("obec")}
@@ -77,6 +98,7 @@ function buildColumns(
     {
       accessorKey: "psc",
       header: "PSČ",
+      size: 70,
       cell: ({ row }) => (
         <EditableCell
           value={row.getValue("psc")}
@@ -87,6 +109,7 @@ function buildColumns(
     {
       accessorKey: "email",
       header: "E-mail",
+      size: 210,
       cell: ({ row }) => (
         <EditableCell
           value={row.getValue("email")}
@@ -99,6 +122,7 @@ function buildColumns(
     {
       accessorKey: "telefon",
       header: "Telefón",
+      size: 150,
       cell: ({ row }) => (
         <EditableCell
           value={row.getValue("telefon")}
@@ -110,6 +134,7 @@ function buildColumns(
     {
       accessorKey: "nechceDL",
       header: "Ďak. list",
+      size: 80,
       cell: ({ row }) => {
         const val = row.getValue("nechceDL") as boolean;
         return (
@@ -130,6 +155,7 @@ function buildColumns(
     {
       accessorKey: "nechceCasopis",
       header: "Časopis",
+      size: 80,
       cell: ({ row }) => {
         const val = row.getValue("nechceCasopis") as boolean;
         return (
@@ -150,6 +176,7 @@ function buildColumns(
     {
       accessorKey: "nechceKalendar",
       header: "Kalendár",
+      size: 80,
       cell: ({ row }) => {
         const val = row.getValue("nechceKalendar") as boolean;
         return (
@@ -170,6 +197,7 @@ function buildColumns(
     {
       accessorKey: "clen",
       header: "Člen",
+      size: 70,
       cell: ({ row }) => {
         const val = row.getValue("clen") as boolean;
         return (
@@ -194,6 +222,7 @@ function buildColumns(
     {
       accessorKey: "datumZapisu",
       header: "Dátum zápisu",
+      size: 110,
       cell: ({ row }) => {
         const val = row.getValue("datumZapisu") as string | null;
         if (!val) return <span className="text-muted/40">—</span>;
@@ -204,11 +233,13 @@ function buildColumns(
     {
       accessorKey: "oslovenie",
       header: "Oslovenie",
+      size: 120,
       enableHiding: true,
     },
     {
       accessorKey: "vs",
       header: "VS",
+      size: 70,
       enableHiding: true,
       cell: ({ row }) => (
         <EditableCell
@@ -220,6 +251,7 @@ function buildColumns(
     {
       accessorKey: "misijneNovinky",
       header: "Mis. novinky",
+      size: 100,
       cell: ({ row }) => {
         const val = row.getValue("misijneNovinky") as string;
         if (!val) return <span className="text-muted/40">—</span>;
@@ -245,6 +277,7 @@ function buildColumns(
     id: `dar_${emp.id}`,
     accessorFn: (row: Person) => row.dary[emp.id],
     header: emp.name,
+    size: 75,
     cell: ({ row }: { row: { index: number; original: Person } }) => {
       const val = row.original.dary[emp.id];
       return (
@@ -262,8 +295,8 @@ function buildColumns(
     },
   }));
 
-  // Insert donation columns after telefon (index 6) — before the boolean flags
-  return [...base.slice(0, 7), ...donationColumns, ...base.slice(7)];
+  // actions(0) + 7 data columns, then donations, then the rest
+  return [...base.slice(0, 8), ...donationColumns, ...base.slice(8)];
 }
 
 const DEFAULT_HIDDEN: Record<string, boolean> = {
@@ -309,7 +342,11 @@ export function DataTable({ data: initialData }: DataTableProps) {
     []
   );
 
-  const columns = buildColumns(handleUpdate);
+  const handleDelete = useCallback((rowIndex: number) => {
+    setData((prev) => prev.filter((_, i) => i !== rowIndex));
+  }, []);
+
+  const columns = buildColumns(handleUpdate, handleDelete);
 
   const table = useReactTable({
     data,
@@ -329,7 +366,7 @@ export function DataTable({ data: initialData }: DataTableProps) {
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const { rows } = table.getFilteredRowModel();
+  const { rows } = table.getRowModel();
 
   const virtualizer = useVirtualizer({
     count: rows.length,
@@ -337,6 +374,17 @@ export function DataTable({ data: initialData }: DataTableProps) {
     estimateSize: () => ROW_HEIGHT,
     overscan: 20,
   });
+
+  // Build CSS grid template from visible columns
+  const visibleColumns = table.getVisibleLeafColumns();
+  const gridTemplate = useMemo(
+    () => visibleColumns.map((col) => `${col.getSize()}px`).join(" "),
+    [visibleColumns]
+  );
+  const totalWidth = useMemo(
+    () => visibleColumns.reduce((sum, col) => sum + col.getSize(), 0),
+    [visibleColumns]
+  );
 
   const filteredCount = rows.length;
   const memberFilter =
@@ -365,7 +413,6 @@ export function DataTable({ data: initialData }: DataTableProps) {
       dary: Object.fromEntries(EMPLOYEES.map((e) => [e.id, null])),
     };
     setData((prev) => [newPerson, ...prev]);
-    // Scroll to top so the new row is visible
     tableContainerRef.current?.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -500,53 +547,57 @@ export function DataTable({ data: initialData }: DataTableProps) {
         </p>
       </div>
 
-      {/* Virtualized scrollable table */}
+      {/* Virtualized scrollable table using CSS grid for column alignment */}
       <div
         ref={tableContainerRef}
         className="flex-1 overflow-auto rounded-lg border border-border bg-card shadow-sm scrollbar-visible"
       >
-        <table className="min-w-max text-sm">
-          <thead className="sticky top-0 z-10">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id} className="border-b border-border bg-muted-bg">
-                {headerGroup.headers.map((header) => {
-                  const isDonation = header.id.startsWith("dar_");
-                  return (
-                    <th
-                      key={header.id}
-                      className={cn(
-                        "whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider",
-                        isDonation
-                          ? "bg-gold/5 text-gold border-l border-gold/20"
-                          : "text-muted bg-muted-bg",
-                        header.column.getCanSort() && "cursor-pointer select-none hover:text-foreground"
+        <div style={{ minWidth: `${totalWidth}px` }}>
+          {/* Header */}
+          <div
+            className="sticky top-0 z-10 border-b border-border bg-muted-bg"
+            style={{ display: "grid", gridTemplateColumns: gridTemplate }}
+          >
+            {table.getHeaderGroups().map((headerGroup) =>
+              headerGroup.headers.map((header) => {
+                const isDonation = header.id.startsWith("dar_");
+                return (
+                  <div
+                    key={header.id}
+                    className={cn(
+                      "whitespace-nowrap px-3 py-2.5 text-left text-xs font-semibold uppercase tracking-wider",
+                      isDonation
+                        ? "bg-gold/5 text-gold border-l border-gold/20"
+                        : "text-muted",
+                      header.column.getCanSort() && "cursor-pointer select-none hover:text-foreground"
+                    )}
+                    onClick={header.column.getToggleSortingHandler()}
+                  >
+                    <div className="flex items-center gap-1">
+                      {flexRender(
+                        header.column.columnDef.header,
+                        header.getContext()
                       )}
-                      onClick={header.column.getToggleSortingHandler()}
-                    >
-                      <div className="flex items-center gap-1">
-                        {flexRender(
-                          header.column.columnDef.header,
-                          header.getContext()
-                        )}
-                        {header.column.getCanSort() && (
-                          <span className="text-muted/50">
-                            {header.column.getIsSorted() === "asc" ? (
-                              <ChevronUp className="h-3.5 w-3.5" />
-                            ) : header.column.getIsSorted() === "desc" ? (
-                              <ChevronDown className="h-3.5 w-3.5" />
-                            ) : (
-                              <ChevronsUpDown className="h-3.5 w-3.5" />
-                            )}
-                          </span>
-                        )}
-                      </div>
-                    </th>
-                  );
-                })}
-              </tr>
-            ))}
-          </thead>
-          <tbody
+                      {header.column.getCanSort() && (
+                        <span className="text-muted/50">
+                          {header.column.getIsSorted() === "asc" ? (
+                            <ChevronUp className="h-3.5 w-3.5" />
+                          ) : header.column.getIsSorted() === "desc" ? (
+                            <ChevronDown className="h-3.5 w-3.5" />
+                          ) : (
+                            <ChevronsUpDown className="h-3.5 w-3.5" />
+                          )}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Body */}
+          <div
             style={{
               height: `${virtualizer.getTotalSize()}px`,
               position: "relative",
@@ -555,10 +606,12 @@ export function DataTable({ data: initialData }: DataTableProps) {
             {virtualizer.getVirtualItems().map((virtualRow) => {
               const row = rows[virtualRow.index];
               return (
-                <tr
+                <div
                   key={row.id}
                   className="border-b border-border/50 transition-colors hover:bg-primary/[0.02]"
                   style={{
+                    display: "grid",
+                    gridTemplateColumns: gridTemplate,
                     position: "absolute",
                     top: 0,
                     left: 0,
@@ -570,22 +623,22 @@ export function DataTable({ data: initialData }: DataTableProps) {
                   {row.getVisibleCells().map((cell) => {
                     const isDonation = cell.column.id.startsWith("dar_");
                     return (
-                      <td
+                      <div
                         key={cell.id}
                         className={cn(
-                          "whitespace-nowrap px-3 py-1.5",
+                          "flex items-center whitespace-nowrap px-3 overflow-hidden",
                           isDonation && "bg-gold/[0.02] border-l border-gold/10"
                         )}
                       >
                         {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
+                      </div>
                     );
                   })}
-                </tr>
+                </div>
               );
             })}
-          </tbody>
-        </table>
+          </div>
+        </div>
       </div>
 
       {/* Detail panel */}
