@@ -351,7 +351,6 @@ export function DataTable({ data: initialData }: DataTableProps) {
     person: Person;
     index: number;
   } | null>(null);
-  const toastTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tableContainerRef = useRef<HTMLDivElement>(null);
   const topScrollRef = useRef<HTMLDivElement>(null);
@@ -405,8 +404,6 @@ export function DataTable({ data: initialData }: DataTableProps) {
     setData((prev) => {
       const person = prev[rowIndex];
       setDeletedToast({ person, index: rowIndex });
-      if (toastTimeout.current) clearTimeout(toastTimeout.current);
-      toastTimeout.current = setTimeout(() => setDeletedToast(null), 8000);
       return prev.filter((_, i) => i !== rowIndex);
     });
   }, []);
@@ -420,7 +417,6 @@ export function DataTable({ data: initialData }: DataTableProps) {
       return next;
     });
     setDeletedToast(null);
-    if (toastTimeout.current) clearTimeout(toastTimeout.current);
   }, [deletedToast]);
 
   const columns = buildColumns(handleUpdate, handleDelete);
